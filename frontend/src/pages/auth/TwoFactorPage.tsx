@@ -25,10 +25,7 @@ export default function TwoFactorPage() {
       await verify2fa(otp)
       setTwoFaVerified(true)
 
-      const role = user!.roles[0]?.name
-      if (role === 'administrador') navigate('/admin')
-      else if (role === 'vendedor') navigate('/vendedor')
-      else navigate('/dashboard')
+      navigate('/catalog')
     } catch {
       setError('Código OTP inválido. Intenta de nuevo.')
     } finally {

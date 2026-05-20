@@ -47,6 +47,30 @@ export interface User {
   company: Company | null
 }
 
+export interface Category {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  is_active: boolean
+}
+
+export interface Product {
+  id: number
+  category_id: number | null
+  sku: string
+  name: string
+  cas_number: string | null
+  description: string | null
+  unit: string
+  price: string
+  stock: number
+  sds_url: string | null
+  requires_special_handling: boolean
+  is_active: boolean
+  category: Category | null
+}
+
 export interface AuthState {
   user: User | null
   token: string | null

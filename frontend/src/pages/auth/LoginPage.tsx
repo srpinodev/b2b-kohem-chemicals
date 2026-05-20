@@ -23,7 +23,7 @@ export default function LoginPage() {
       if (data.requires_2fa) {
         navigate('/auth/2fa')
       } else {
-        navigate(dashboardPath(data.user.roles[0]?.name))
+        navigate('/catalog')
       }
     } catch (err: unknown) {
       const msg =

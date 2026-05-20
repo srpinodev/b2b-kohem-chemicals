@@ -58,7 +58,7 @@ export default function DashboardPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <DashCard title="Catálogo" desc="Próximamente — Sprint 2" disabled />
+          <DashCard title="Catálogo" desc="Ver productos disponibles" onClick={() => navigate('/catalog')} />
           <DashCard title="Pedidos" desc="Próximamente — Sprint 3" disabled />
           <DashCard title="Facturas" desc="Próximamente — Sprint 4" disabled />
         </div>
@@ -75,9 +75,10 @@ export default function DashboardPage() {
   )
 }
 
-function DashCard({ title, desc, disabled }: { title: string; desc: string; disabled?: boolean }) {
+function DashCard({ title, desc, disabled, onClick }: { title: string; desc: string; disabled?: boolean; onClick?: () => void }) {
   return (
     <div
+      onClick={onClick}
       className={`p-5 rounded-xl border ${disabled ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200 hover:border-blue-400 cursor-pointer'}`}
     >
       <p className="font-semibold text-gray-800">{title}</p>

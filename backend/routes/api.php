@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProductController;
 use App\Http\Middleware\JwtAuthenticate;
 use App\Http\Middleware\RoleGuard;
 use Illuminate\Support\Facades\Cache;
@@ -46,16 +47,24 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Sprint 2 — Catalog (public read)
+Route::prefix('catalog')->group(function () {
+    Route::get('/', [ProductController::class, 'index']);
+    Route::get('/{sku}', [ProductController::class, 'show']);
+});
+
 Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
-    // Admin-only routes (Sprint 2+)
-    Route::middleware([RoleGuard::class.':administrador'])->prefix('admin')->group(function () {
-        Route::get('/products', fn () => response()->json(['data' => []]));
+    // Admin + Vendedor — product management
+    Route::middleware([RoleGuard::class.':administrador,vendedor'])->prefix('admin')->group(function () {
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::put('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     });
 
-    // Vendedor + Administrador
+    // Vendedor routes (Sprint 3+)
     Route::middleware([RoleGuard::class.':vendedor,administrador'])->prefix('vendedor')->group(function () {
-        // Sales routes — added in Sprint 3+
+        // Orders — Sprint 3
     });
 });
