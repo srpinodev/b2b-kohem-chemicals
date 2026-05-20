@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
@@ -54,6 +56,14 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
 
     // Sprint 4 — Checkout
     Route::post('/orders/{order}/checkout', [PaymentController::class, 'checkout']);
+
+    // Sprint 5 — Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    // Sprint 5 — Chatbot
+    Route::post('/chatbot/message', [ChatbotController::class, 'message']);
 
     // Admin + Vendedor — product & order management
     Route::middleware([RoleGuard::class.':administrador,vendedor'])->prefix('admin')->group(function () {

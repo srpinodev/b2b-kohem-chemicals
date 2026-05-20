@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Adapters\Chatbot\ChatbotGateway;
+use App\Adapters\Chatbot\FaqChatbotAdapter;
+use App\Adapters\Email\EmailGateway;
+use App\Adapters\Email\LaravelMailAdapter;
 use App\Adapters\Payment\PaymentGateway;
 use App\Adapters\Payment\StripeAdapter;
 use App\Events\OrderConfirmed;
@@ -15,6 +19,7 @@ use App\Repositories\Contracts\ProductSource;
 use App\Repositories\Eloquent\EloquentProductRepository;
 use App\Services\AuthService;
 use App\Services\InvoiceService;
+use App\Services\NotificationService;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +46,12 @@ class AppServiceProvider extends ServiceProvider
             $app->make(PaymentGateway::class),
             $app->make(InvoiceService::class),
         ));
+
+        // Adapter pattern: Email (LaravelMailAdapter uses configured MAIL_* driver — Mailpit in dev)
+        $this->app->singleton(EmailGateway::class, fn () => new LaravelMailAdapter);
+
+        // Adapter pattern: Chatbot (FAQ rule-based; swap for BotPress adapter when available)
+        $this->app->singleton(ChatbotGateway::class, fn () => new FaqChatbotAdapter);
     }
 
     public function boot(): void
