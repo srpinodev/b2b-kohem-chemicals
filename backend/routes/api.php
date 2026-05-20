@@ -24,8 +24,8 @@ Route::get('/health', function () {
     return response()->json($checks, $checks['status'] === 'ok' ? 200 : 503);
 });
 
-// Sprint 1 — Auth
-Route::prefix('auth')->group(function () {
+// Sprint 1 — Auth (throttle más estricto: 10 intentos/min para prevenir fuerza bruta)
+Route::prefix('auth')->middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware(JwtAuthenticate::class)->group(function () {
