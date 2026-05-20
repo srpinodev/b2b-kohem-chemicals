@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->throttleApi('60,1');  // 60 req/min default
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
