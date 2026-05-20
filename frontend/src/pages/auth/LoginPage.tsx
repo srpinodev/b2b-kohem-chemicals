@@ -87,8 +87,3 @@ export default function LoginPage() {
   )
 }
 
-function dashboardPath(role?: string): string {
-  if (role === 'administrador') return '/admin'
-  if (role === 'vendedor') return '/vendedor'
-  return '/dashboard'
-}
