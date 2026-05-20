@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Middleware\JwtAuthenticate;
 use App\Http\Middleware\RoleGuard;
@@ -45,10 +47,22 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
 
+    // Sprint 4 — Invoices
+    Route::get('/invoices', [InvoiceController::class, 'index']);
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
+
+    // Sprint 4 — Checkout
+    Route::post('/orders/{order}/checkout', [PaymentController::class, 'checkout']);
+
     // Admin + Vendedor — product & order management
     Route::middleware([RoleGuard::class.':administrador,vendedor'])->prefix('admin')->group(function () {
+        Route::get('/products', [ProductController::class, 'index']);
         Route::post('/products', [ProductController::class, 'store']);
         Route::put('/products/{product}', [ProductController::class, 'update']);
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     });
 });
+
+// Sprint 4 — Payment webhook (no JWT auth — Stripe signs the payload)
+Route::post('/webhooks/stripe', [PaymentController::class, 'webhook']);

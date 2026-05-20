@@ -77,3 +77,34 @@ export interface AuthState {
   isAuthenticated: boolean
   twoFaVerified: boolean
 }
+
+export interface Transaction {
+  id: number
+  order_id: number
+  invoice_id: number
+  gateway: string
+  gateway_id: string
+  status: 'pending' | 'succeeded' | 'failed'
+  amount: string
+  currency: string
+  checkout_url: string
+  created_at: string
+}
+
+export interface Invoice {
+  id: number
+  order_id: number
+  company_id: number
+  invoice_number: string
+  type: 'invoice' | 'proforma' | 'credit_note'
+  status: 'draft' | 'issued' | 'paid' | 'cancelled'
+  subtotal: string
+  tax_rate: string
+  tax_amount: string
+  total: string
+  pdf_path: string | null
+  issued_at: string | null
+  due_date: string | null
+  created_at: string
+  transactions?: Transaction[]
+}

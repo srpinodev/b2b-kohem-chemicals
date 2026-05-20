@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getOrder, updateOrderStatus, type Order } from '../../services/api/orders'
 import { useAuthStore } from '../../store/authStore'
 
@@ -88,6 +88,18 @@ export default function OrderDetailPage() {
             <div className="flex justify-between text-gray-600"><span>IVA 19%</span><span>${Number(order.tax_amount).toLocaleString('es-CO')}</span></div>
             <div className="flex justify-between font-bold text-gray-900 border-t pt-2"><span>Total</span><span>${Number(order.total).toLocaleString('es-CO')}</span></div>
           </div>
+
+          {/* Pay button for confirmed/processing orders */}
+          {['confirmed', 'processing'].includes(order.status) && (
+            <div className="mb-4">
+              <Link
+                to={`/orders/${order.id}/checkout`}
+                className="inline-flex items-center gap-2 bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-800 transition"
+              >
+                Pagar pedido
+              </Link>
+            </div>
+          )}
 
           {/* Transitions */}
           {availableTransitions.length > 0 && (

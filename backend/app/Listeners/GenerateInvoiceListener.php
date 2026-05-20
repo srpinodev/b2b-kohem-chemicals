@@ -3,15 +3,18 @@
 namespace App\Listeners;
 
 use App\Events\OrderConfirmed;
+use App\Services\InvoiceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class GenerateInvoiceListener implements ShouldQueue
 {
     public string $queue = 'invoices';
 
+    public function __construct(private readonly InvoiceService $invoiceService) {}
+
     public function handle(OrderConfirmed $event): void
     {
-        // Sprint 4: generate invoice PDF via InvoiceService
-        \Log::info('Invoice generation queued', ['order' => $event->order->order_number]);
+        $invoice = $this->invoiceService->createFromOrder($event->order);
+        $this->invoiceService->generatePdf($invoice);
     }
 }
