@@ -35,3 +35,8 @@ Thumbs.db
 # Misc
 *.log
 *.cache
+
+# Archivos internos del proyecto (no publicar)
+CLAUDE.md
+plan.md
+"Documento soporte de proyecto/"
