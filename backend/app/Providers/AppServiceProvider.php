@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Events\OrderConfirmed;
+use App\Events\OrderStatusChanged;
+use App\Listeners\GenerateInvoiceListener;
+use App\Listeners\LogTraceabilityListener;
+use App\Listeners\SendOrderConfirmationEmailListener;
+use App\Listeners\UpdateInventoryListener;
 use App\Proxies\CachedProductSourceProxy;
 use App\Repositories\Contracts\ProductSource;
 use App\Repositories\Eloquent\EloquentProductRepository;
 use App\Services\AuthService;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use PragmaRX\Google2FA\Google2FA;
 
@@ -19,8 +26,6 @@ class AppServiceProvider extends ServiceProvider
             $app->make(Google2FA::class)
         ));
 
-        // Bind ProductSource to the Proxy, which wraps the real repository.
-        // Any class that depends on ProductSource gets the cached version transparently.
         $this->app->singleton(ProductSource::class, fn () => new CachedProductSourceProxy(
             new EloquentProductRepository
         ));
@@ -28,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        // Observer pattern: register listeners for domain events
+        Event::listen(OrderConfirmed::class, UpdateInventoryListener::class);
+        Event::listen(OrderConfirmed::class, SendOrderConfirmationEmailListener::class);
+        Event::listen(OrderConfirmed::class, GenerateInvoiceListener::class);
+        Event::listen(OrderStatusChanged::class, LogTraceabilityListener::class);
     }
 }

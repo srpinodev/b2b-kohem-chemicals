@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getProductBySku } from '../../services/api/catalog'
+import { useCartStore } from '../../store/cartStore'
 import type { Product } from '../../types'
 
 export default function ProductDetailPage() {
   const { sku } = useParams<{ sku: string }>()
   const navigate = useNavigate()
+  const addItem = useCartStore((s) => s.addItem)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [qty, setQty] = useState(1)
+  const [added, setAdded] = useState(false)
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
@@ -75,13 +79,26 @@ export default function ProductDetailPage() {
           )}
 
           <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="flex items-center gap-3 mb-3">
+              <label className="text-sm text-gray-600">Cantidad:</label>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-8 h-8 rounded border text-gray-600 hover:bg-gray-100">−</button>
+                <span className="w-10 text-center font-medium">{qty}</span>
+                <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="w-8 h-8 rounded border text-gray-600 hover:bg-gray-100">+</button>
+              </div>
+            </div>
             <button
               disabled={product.stock === 0}
+              onClick={() => { addItem(product, qty); setAdded(true); setTimeout(() => setAdded(false), 2000) }}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
             >
-              {product.stock > 0 ? 'Agregar al carrito' : 'Producto agotado'}
+              {product.stock === 0 ? 'Producto agotado' : added ? '✓ Agregado al carrito' : 'Agregar al carrito'}
             </button>
-            <p className="text-xs text-center text-gray-400 mt-2">Carrito disponible en Sprint 3</p>
+            {added && (
+              <button onClick={() => navigate('/cart')} className="w-full mt-2 text-sm text-blue-600 hover:underline">
+                Ver carrito →
+              </button>
+            )}
           </div>
         </div>
       </div>
