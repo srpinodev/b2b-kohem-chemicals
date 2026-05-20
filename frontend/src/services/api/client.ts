@@ -3,12 +3,18 @@ import axios from 'axios'
 const client = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-  withCredentials: true,
 })
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('kohem_token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const stored = localStorage.getItem('kohem-auth')
+  if (stored) {
+    try {
+      const { state } = JSON.parse(stored)
+      if (state?.token) config.headers.Authorization = `Bearer ${state.token}`
+    } catch {
+      // ignore malformed storage
+    }
+  }
   return config
 })
 
@@ -16,7 +22,7 @@ client.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('kohem_token')
+      localStorage.removeItem('kohem-auth')
       window.location.href = '/login'
     }
     return Promise.reject(error)
