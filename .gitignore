@@ -1,0 +1,37 @@
+# Laravel
+backend/.env
+backend/vendor/
+backend/storage/logs/*.log
+backend/storage/app/public/sds/
+backend/bootstrap/cache/*.php
+backend/public/hot
+backend/public/storage
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker volumes
+.docker/
+
+# Misc
+*.log
+*.cache
