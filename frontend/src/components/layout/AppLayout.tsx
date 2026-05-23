@@ -18,7 +18,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user)
   const logoutStore = useAuthStore((s) => s.logout)
   const totalItems = useCartStore((s) => s.totalItems())
-  const isAdmin = user?.roles.some((r) => ['administrador', 'vendedor'].includes(r.name))
+  const isManager = user?.roles.some((r) => ['administrador', 'vendedor'].includes(r.name))
+  const isAdmin = user?.roles.some((r) => r.name === 'administrador')
   const role = user?.roles[0]?.name
 
   const roleLabel: Record<string, string> = {
@@ -50,7 +51,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <NavLink to="/catalog" className={navLinkClass}>Catálogo</NavLink>
               <NavLink to="/orders" className={navLinkClass}>Pedidos</NavLink>
               <NavLink to="/invoices" className={navLinkClass}>Facturas</NavLink>
-              {isAdmin && <NavLink to="/admin" className={navLinkClass}>Admin</NavLink>}
+              {isManager && <NavLink to="/admin/products" className={navLinkClass}>Productos</NavLink>}
+              {isAdmin && <NavLink to="/admin/users" className={navLinkClass}>Usuarios</NavLink>}
             </div>
           </div>
 
