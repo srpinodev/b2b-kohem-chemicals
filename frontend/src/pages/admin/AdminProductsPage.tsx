@@ -7,17 +7,13 @@ import {
 } from '../../services/api/admin'
 import { usePolling } from '../../hooks/usePolling'
 import { useDebounce } from '../../hooks/useDebounce'
-
-const CATEGORIES = [
-  { id: 1, name: 'Ácidos' },
-  { id: 2, name: 'Bases' },
-  { id: 3, name: 'Solventes' },
-  { id: 4, name: 'Oxidantes' },
-]
+import { getCategories } from '../../services/api/catalog'
+import type { Category } from '../../types'
 
 export default function AdminProductsPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<PaginatedProducts | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
   const [categoryId, setCategoryId] = useState<number | undefined>()
@@ -46,6 +42,10 @@ export default function AdminProductsPage() {
     setLoading(true)
     refresh().finally(() => setLoading(false))
   }, [refresh])
+
+  useEffect(() => {
+    getCategories().then(({ data }) => setCategories(data)).catch(() => { /* sin bloqueo */ })
+  }, [])
 
   usePolling(refresh, { intervalMs: 20_000 })
 
@@ -101,7 +101,7 @@ export default function AdminProductsPage() {
           className="bg-dust-50 border border-dust-300 rounded-lg px-3 py-2 text-sm text-gunmetal-800 focus:border-pine-400 focus:ring-2 focus:ring-pine-400/30 focus:bg-white transition min-w-[180px]"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
 

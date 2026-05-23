@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getOrder } from '../../services/api/orders'
-import { initiateCheckout } from '../../services/api/payments'
+import { initiateCheckout, requestPaymentCode } from '../../services/api/payments'
 import type { Order } from '../../services/api/orders'
 import { useAuthStore } from '../../store/authStore'
 import { useRealtimeStore } from '../../store/realtimeStore'
@@ -16,6 +16,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState('')
   const notificationTick = useRealtimeStore((s) => s.notificationTick)
   const currentUserId = useAuthStore((s) => s.user?.id)
+
+  // Flujo OTP: idle → requesting → otpSent (esperando código) → verifying → redirecting
+  const [otpStep, setOtpStep] = useState<'idle' | 'sent' | 'verifying'>('idle')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpTtl, setOtpTtl] = useState<number | null>(null)
+  const [sendingCode, setSendingCode] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!id) return
@@ -40,9 +46,27 @@ export default function CheckoutPage() {
 
   usePolling(refresh, { intervalMs: 5_000, enabled: !!id && !processing })
 
-  const handlePay = async () => {
+  const handleRequestCode = async () => {
     if (!order) return
+    setError('')
+    setSendingCode(true)
+    try {
+      const r = await requestPaymentCode(order.id)
+      setOtpTtl(r.data.ttl_minutes)
+      setOtpStep('sent')
+      setOtpCode('')
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg ?? 'No se pudo enviar el código. Intenta nuevamente.')
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
+  const handleVerifyAndPay = async () => {
+    if (!order || otpCode.length !== 6) return
     setProcessing(true)
+    setOtpStep('verifying')
     setError('')
     try {
       const origin = window.location.origin
@@ -50,12 +74,14 @@ export default function CheckoutPage() {
         order.id,
         `${origin}/payment/return?status=success&order_id=${order.id}`,
         `${origin}/payment/return?status=cancelled&order_id=${order.id}`,
+        otpCode,
       )
       window.location.href = res.data.checkout_url
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg ?? 'Error al iniciar el pago. Intenta nuevamente.')
+      setError(msg ?? 'Error al procesar el pago.')
       setProcessing(false)
+      setOtpStep('sent')
     }
   }
 
@@ -127,30 +153,84 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <button
-        onClick={handlePay}
-        disabled={processing || !canPay}
-        className="w-full bg-gold-400 hover:bg-gold-500 disabled:opacity-50 disabled:cursor-not-allowed text-gunmetal-800 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2"
-      >
-        {processing ? (
-          <>
-            <span className="w-4 h-4 border-2 border-gunmetal-800 border-t-transparent rounded-full animate-spin" />
-            Redirigiendo a Stripe...
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Pagar con tarjeta
-          </>
-        )}
-      </button>
-
-      {!canPay && (
+      {!canPay ? (
         <p className="text-sm text-gunmetal-500 mt-3 text-center">
           El pedido debe estar confirmado para poder pagar.
         </p>
+      ) : otpStep === 'idle' ? (
+        <button
+          onClick={handleRequestCode}
+          disabled={sendingCode}
+          className="w-full bg-gold-400 hover:bg-gold-500 disabled:opacity-50 disabled:cursor-not-allowed text-gunmetal-800 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2"
+          data-testid="request-code-btn"
+        >
+          {sendingCode ? (
+            <>
+              <span className="w-4 h-4 border-2 border-gunmetal-800 border-t-transparent rounded-full animate-spin" />
+              Enviando código…
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Pagar con tarjeta
+            </>
+          )}
+        </button>
+      ) : (
+        <div className="bg-white rounded-2xl border border-dust-200 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-pine-100 text-pine-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gunmetal-800">Verifica el pago</p>
+              <p className="text-xs text-gunmetal-500">
+                Enviamos un código de 6 dígitos a tu correo. Vence en {otpTtl ?? 10} min.
+              </p>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+            autoFocus
+            placeholder="000000"
+            className="w-full text-center text-2xl tracking-[0.5em] font-mono bg-dust-50 border border-dust-300 rounded-lg px-3 py-3 text-gunmetal-800 focus:border-pine-400 focus:ring-2 focus:ring-pine-400/30 transition mb-3"
+            data-testid="otp-input"
+          />
+
+          <button
+            onClick={handleVerifyAndPay}
+            disabled={otpCode.length !== 6 || processing}
+            className="w-full bg-gold-400 hover:bg-gold-500 disabled:opacity-50 disabled:cursor-not-allowed text-gunmetal-800 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2"
+            data-testid="verify-pay-btn"
+          >
+            {processing ? (
+              <>
+                <span className="w-4 h-4 border-2 border-gunmetal-800 border-t-transparent rounded-full animate-spin" />
+                Verificando y redirigiendo…
+              </>
+            ) : (
+              'Verificar y pagar'
+            )}
+          </button>
+
+          <button
+            onClick={handleRequestCode}
+            disabled={sendingCode || processing}
+            className="w-full mt-2 text-sm text-pine-500 hover:text-pine-700 hover:underline disabled:opacity-50"
+          >
+            {sendingCode ? 'Reenviando…' : 'Reenviar código'}
+          </button>
+        </div>
       )}
     </div>
   )

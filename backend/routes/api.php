@@ -58,7 +58,8 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
-    // Sprint 4 — Checkout
+    // Sprint 4 — Checkout (OTP por email antes del checkout real)
+    Route::post('/orders/{order}/payment-code', [PaymentController::class, 'requestCode']);
     Route::post('/orders/{order}/checkout', [PaymentController::class, 'checkout']);
 
     // Sprint 5 — Notifications
@@ -84,6 +85,7 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
         Route::post('/users', [UserController::class, 'store']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+        Route::post('/users/{user}/reset-2fa', [UserController::class, 'resetTwoFactor']);
     });
 });
 
