@@ -9,12 +9,6 @@ use App\Adapters\Email\LaravelMailAdapter;
 use App\Adapters\Payment\FakeStripeAdapter;
 use App\Adapters\Payment\PaymentGateway;
 use App\Adapters\Payment\StripeAdapter;
-use App\Events\OrderConfirmed;
-use App\Events\OrderStatusChanged;
-use App\Listeners\GenerateInvoiceListener;
-use App\Listeners\LogTraceabilityListener;
-use App\Listeners\SendOrderConfirmationEmailListener;
-use App\Listeners\UpdateInventoryListener;
 use App\Proxies\CachedProductSourceProxy;
 use App\Repositories\Contracts\ProductSource;
 use App\Repositories\Eloquent\EloquentProductRepository;
@@ -22,7 +16,6 @@ use App\Services\AuthService;
 use App\Services\InvoiceService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use PragmaRX\Google2FA\Google2FA;
 
@@ -65,6 +58,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        
+        // Observer pattern (CLAUDE.md): los listeners en backend/app/Listeners/
+        // se suscriben por auto-discovery de Laravel 11 — convención `handle(Event $event)`.
+        // NO registrarlos manualmente aquí: causaría doble suscripción
+        // (cada evento se ejecutaba 2 veces — facturas duplicadas, emails dobles, etc.).
     }
 }
