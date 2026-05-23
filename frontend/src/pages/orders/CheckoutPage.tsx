@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getOrder } from '../../services/api/orders'
 import { initiateCheckout } from '../../services/api/payments'
 import type { Order } from '../../services/api/orders'
+import { useAuthStore } from '../../store/authStore'
+import { useRealtimeStore } from '../../store/realtimeStore'
+import { usePolling } from '../../hooks/usePolling'
 
 export default function CheckoutPage() {
   const { id } = useParams<{ id: string }>()
@@ -11,14 +14,31 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
+  const notificationTick = useRealtimeStore((s) => s.notificationTick)
+  const currentUserId = useAuthStore((s) => s.user?.id)
+
+  const refresh = useCallback(async () => {
+    if (!id) return
+    try {
+      const r = await getOrder(Number(id))
+      setOrder(r.data)
+    } catch {
+      setError('No se pudo cargar el pedido.')
+    }
+  }, [id])
 
   useEffect(() => {
     if (!id) return
-    getOrder(Number(id))
-      .then((r) => setOrder(r.data))
-      .catch(() => setError('No se pudo cargar el pedido.'))
-      .finally(() => setLoading(false))
-  }, [id])
+    setLoading(true)
+    refresh().finally(() => setLoading(false))
+  }, [id, refresh])
+
+  useEffect(() => {
+    if (!id || notificationTick === 0) return
+    void refresh()
+  }, [notificationTick, id, refresh])
+
+  usePolling(refresh, { intervalMs: 5_000, enabled: !!id && !processing })
 
   const handlePay = async () => {
     if (!order) return
@@ -48,6 +68,12 @@ export default function CheckoutPage() {
     <div className="max-w-lg mx-auto px-6 py-10 text-center text-red-600">{error}</div>
   )
   if (!order) return null
+
+  // El pago pertenece al cliente que creó el pedido. Vendedores/admins que entren
+  // por URL directa son redirigidos al detalle del pedido (donde no verán botón de pagar).
+  if (currentUserId && order.user_id !== currentUserId) {
+    return <Navigate to={`/orders/${order.id}`} replace />
+  }
 
   const subtotal = Number(order.subtotal)
   const tax = Number(order.tax_amount)

@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getOrders, type Order } from '../../services/api/orders'
+import { useRealtimeStore } from '../../store/realtimeStore'
+import { usePolling } from '../../hooks/usePolling'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente', confirmed: 'Confirmado', processing: 'En proceso',
@@ -20,10 +22,24 @@ export default function OrdersPage() {
   const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const notificationTick = useRealtimeStore((s) => s.notificationTick)
+
+  const refresh = useCallback(async () => {
+    const { data } = await getOrders()
+    setOrders(data.data)
+  }, [])
 
   useEffect(() => {
-    getOrders().then(({ data }) => setOrders(data.data)).finally(() => setLoading(false))
-  }, [])
+    setLoading(true)
+    refresh().finally(() => setLoading(false))
+  }, [refresh])
+
+  useEffect(() => {
+    if (notificationTick === 0) return
+    void refresh()
+  }, [notificationTick, refresh])
+
+  usePolling(refresh, { intervalMs: 10_000 })
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">

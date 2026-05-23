@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { downloadInvoicePdf, getInvoices } from '../../services/api/payments'
 import type { Invoice } from '../../types'
+import { useRealtimeStore } from '../../store/realtimeStore'
+import { usePolling } from '../../hooks/usePolling'
 
 const TYPE_LABEL: Record<string, string> = {
   invoice: 'Factura',
@@ -27,13 +29,29 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState<number | null>(null)
+  const notificationTick = useRealtimeStore((s) => s.notificationTick)
+
+  const refresh = useCallback(async () => {
+    try {
+      const r = await getInvoices()
+      setInvoices(r.data.data)
+      setError('')
+    } catch {
+      setError('No se pudieron cargar las facturas.')
+    }
+  }, [])
 
   useEffect(() => {
-    getInvoices()
-      .then((r) => setInvoices(r.data.data))
-      .catch(() => setError('No se pudieron cargar las facturas.'))
-      .finally(() => setLoading(false))
-  }, [])
+    setLoading(true)
+    refresh().finally(() => setLoading(false))
+  }, [refresh])
+
+  useEffect(() => {
+    if (notificationTick === 0) return
+    void refresh()
+  }, [notificationTick, refresh])
+
+  usePolling(refresh, { intervalMs: 15_000 })
 
   const handleDownload = async (inv: Invoice) => {
     setDownloading(inv.id)

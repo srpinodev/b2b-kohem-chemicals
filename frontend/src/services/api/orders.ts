@@ -22,6 +22,8 @@ export interface StateLog {
 export interface Order {
   id: number
   order_number: string
+  user_id: number
+  company_id?: number | null
   type: string
   status: string
   pricing_strategy: string
