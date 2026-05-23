@@ -14,8 +14,9 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'success_url' => ['required', 'url'],
-            'cancel_url'  => ['required', 'url'],
+            'success_url'       => ['required', 'url'],
+            'cancel_url'        => ['required', 'url'],
+            'verification_code' => ['required', 'string', 'digits:6'],
         ];
     }
 }

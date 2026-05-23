@@ -58,7 +58,8 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
-    // Sprint 4 — Checkout
+    // Sprint 4 — Checkout (OTP por email antes del checkout real)
+    Route::post('/orders/{order}/payment-code', [PaymentController::class, 'requestCode']);
     Route::post('/orders/{order}/checkout', [PaymentController::class, 'checkout']);
 
     // Sprint 5 — Notifications

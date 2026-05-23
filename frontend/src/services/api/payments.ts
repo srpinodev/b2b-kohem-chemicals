@@ -29,8 +29,17 @@ export const downloadInvoicePdf = async (id: number, invoiceNumber: string) => {
   URL.revokeObjectURL(url)
 }
 
-export const initiateCheckout = (orderId: number, successUrl: string, cancelUrl: string) =>
+export const requestPaymentCode = (orderId: number) =>
+  client.post<{ message: string; ttl_minutes: number }>(`/orders/${orderId}/payment-code`)
+
+export const initiateCheckout = (
+  orderId: number,
+  successUrl: string,
+  cancelUrl: string,
+  verificationCode: string,
+) =>
   client.post<CheckoutResponse>(`/orders/${orderId}/checkout`, {
     success_url: successUrl,
     cancel_url: cancelUrl,
+    verification_code: verificationCode,
   })
