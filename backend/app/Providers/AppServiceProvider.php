@@ -65,10 +65,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Observer pattern: register listeners for domain events
-        Event::listen(OrderConfirmed::class, UpdateInventoryListener::class);
-        Event::listen(OrderConfirmed::class, SendOrderConfirmationEmailListener::class);
-        Event::listen(OrderConfirmed::class, GenerateInvoiceListener::class);
-        Event::listen(OrderStatusChanged::class, LogTraceabilityListener::class);
+        
     }
 }
