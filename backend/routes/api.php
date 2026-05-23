@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\JwtAuthenticate;
 use App\Http\Middleware\RoleGuard;
+use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +44,8 @@ Route::prefix('catalog')->group(function () {
     Route::get('/{sku}', [ProductController::class, 'show']);
 });
 
+Route::get('/categories', fn () => Category::where('is_active', true)->orderBy('name')->get());
+
 Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
@@ -65,12 +69,21 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
     // Sprint 5 — Chatbot
     Route::post('/chatbot/message', [ChatbotController::class, 'message']);
 
-    // Admin + Vendedor — product & order management
+    // Admin + Vendedor — product management
     Route::middleware([RoleGuard::class.':administrador,vendedor'])->prefix('admin')->group(function () {
         Route::get('/products', [ProductController::class, 'index']);
         Route::post('/products', [ProductController::class, 'store']);
         Route::put('/products/{product}', [ProductController::class, 'update']);
+        Route::post('/products/{product}', [ProductController::class, 'update']); // multipart POST con _method=PUT (uploads)
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    });
+
+    // Admin solo — user management
+    Route::middleware([RoleGuard::class.':administrador'])->prefix('admin')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
     });
 });
 
