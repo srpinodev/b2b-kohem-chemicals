@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getProducts } from '../../services/api/catalog'
+import { getCategories, getProducts } from '../../services/api/catalog'
 import type { PaginatedProducts } from '../../services/api/catalog'
-
-const CATEGORIES = [
-  { id: 1, name: 'Ácidos' },
-  { id: 2, name: 'Bases' },
-  { id: 3, name: 'Solventes' },
-  { id: 4, name: 'Oxidantes' },
-]
+import type { Category } from '../../types'
 
 export default function CatalogPage() {
   const navigate = useNavigate()
 
   const [catalog, setCatalog] = useState<PaginatedProducts | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<number | undefined>()
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    getCategories().then(({ data }) => setCategories(data)).catch(() => { /* fallback al string vacío */ })
+  }, [])
 
   async function fetchCatalog() {
     setLoading(true)
@@ -52,7 +51,7 @@ export default function CatalogPage() {
               Catálogo
             </p>
             <h1 className="text-2xl sm:text-3xl font-bold text-gunmetal-800">
-              Productos químicos industriales
+              Productos químicos
             </h1>
             <p className="text-sm text-gunmetal-400 mt-1">
               {catalog ? `${catalog.total} producto(s) disponibles` : 'Explora nuestro inventario'}
@@ -83,7 +82,7 @@ export default function CatalogPage() {
           className="bg-dust-50 border border-dust-300 rounded-lg px-3 py-2 text-sm text-gunmetal-800 focus:border-pine-400 focus:ring-2 focus:ring-pine-400/30 focus:bg-white transition min-w-[200px]"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
