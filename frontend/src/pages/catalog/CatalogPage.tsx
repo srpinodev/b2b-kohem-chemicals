@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getCategories, getProducts } from '../../services/api/catalog'
 import type { PaginatedProducts } from '../../services/api/catalog'
 import type { Category } from '../../types'
+import { useDebounce } from '../../hooks/useDebounce'
 
 export default function CatalogPage() {
   const navigate = useNavigate()
@@ -10,36 +11,55 @@ export default function CatalogPage() {
   const [catalog, setCatalog] = useState<PaginatedProducts | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [categoryId, setCategoryId] = useState<number | undefined>()
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
 
   useEffect(() => {
-    getCategories().then(({ data }) => setCategories(data)).catch(() => { /* fallback al string vacío */ })
+    let cancelled = false
+    getCategories()
+      .then(({ data }) => { if (!cancelled) setCategories(data) })
+      .catch(() => { /* fallback al string vacío */ })
+    return () => { cancelled = true }
   }, [])
 
-  async function fetchCatalog() {
-    setLoading(true)
-    try {
-      const { data } = await getProducts({
-        search: search || undefined,
-        category_id: categoryId,
-        page,
-        per_page: 12,
-      })
-      setCatalog(data)
-    } finally {
-      setLoading(false)
+  // Fetch del catálogo cuando cambian los filtros o la página. El flag isFetching
+  // se setea desde callbacks async (no sincrónico en el body del effect) para
+  // evitar cascading renders y satisfacer react-hooks/set-state-in-effect.
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      try {
+        const { data } = await getProducts({
+          search: debouncedSearch || undefined,
+          category_id: categoryId,
+          page,
+          per_page: 12,
+        })
+        if (!cancelled) {
+          setCatalog(data)
+          setIsFetching(false)
+        }
+      } catch {
+        if (!cancelled) setIsFetching(false)
+      }
     }
-  }
-
-  useEffect(() => { fetchCatalog() }, [search, categoryId, page])
+    void Promise.resolve().then(() => { if (!cancelled) setIsFetching(true) })
+    void run()
+    return () => { cancelled = true }
+  }, [debouncedSearch, categoryId, page])
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    // El submit del form mantiene la UX de tecla Enter; el fetch lo dispara el debounce
+    // automáticamente, así que aquí solo aseguramos volver a la primera página.
     e.preventDefault()
     setPage(1)
-    fetchCatalog()
   }
+
+  // Mostramos skeleton solo en la carga inicial; los refetch por filtros mantienen
+  // los resultados previos visibles para no parpadear.
+  const showSkeleton = isFetching && catalog === null
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -89,7 +109,7 @@ export default function CatalogPage() {
       </div>
 
       {/* Grid */}
-      {loading ? (
+      {showSkeleton ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="bg-white rounded-xl border border-dust-200 p-5 animate-pulse">
@@ -106,7 +126,7 @@ export default function CatalogPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
             {catalog?.data.map((product) => (
               <article
                 key={product.id}
