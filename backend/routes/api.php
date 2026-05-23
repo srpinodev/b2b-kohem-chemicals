@@ -76,3 +76,6 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
 
 // Sprint 4 — Payment webhook (no JWT auth — Stripe signs the payload)
 Route::post('/webhooks/stripe', [PaymentController::class, 'webhook']);
+
+// Sprint 4 — Pasarela simulada para demo local (solo activa cuando FakeStripeAdapter está enlazado)
+Route::get('/payments/fake/complete', [PaymentController::class, 'fakeComplete']);

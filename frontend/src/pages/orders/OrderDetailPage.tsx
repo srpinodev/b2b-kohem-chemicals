@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getOrder, updateOrderStatus, type Order } from '../../services/api/orders'
 import { useAuthStore } from '../../store/authStore'
+import { useRealtimeStore } from '../../store/realtimeStore'
+import { usePolling } from '../../hooks/usePolling'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente', confirmed: 'Confirmado', processing: 'En proceso',
@@ -35,11 +37,27 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
+  const notificationTick = useRealtimeStore((s) => s.notificationTick)
+
+  const refresh = useCallback(async () => {
+    if (!id) return
+    const { data } = await getOrder(Number(id))
+    setOrder(data)
+  }, [id])
 
   useEffect(() => {
     if (!id) return
-    getOrder(Number(id)).then(({ data }) => setOrder(data)).finally(() => setLoading(false))
-  }, [id])
+    setLoading(true)
+    refresh().finally(() => setLoading(false))
+  }, [id, refresh])
+
+  // Re-fetch inmediato cuando llega una notificación nueva al usuario.
+  useEffect(() => {
+    if (!id || notificationTick === 0) return
+    void refresh()
+  }, [notificationTick, id, refresh])
+
+  usePolling(refresh, { intervalMs: 5_000, enabled: !!id })
 
   async function handleTransition(status: string) {
     if (!order) return
@@ -63,7 +81,11 @@ export default function OrderDetailPage() {
     </div>
   )
 
-  const availableTransitions = isAdmin ? TRANSITIONS[order.status] : (order.status === 'pending' ? ['cancelled'] : [])
+  const isOwner = order.user_id === user?.id
+  const canPay = isOwner && ['confirmed', 'processing'].includes(order.status)
+  const availableTransitions = isAdmin
+    ? TRANSITIONS[order.status]
+    : (isOwner && order.status === 'pending' ? ['cancelled'] : [])
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
@@ -125,7 +147,7 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {['confirmed', 'processing'].includes(order.status) && (
+          {canPay && (
             <div className="mb-6">
               <Link
                 to={`/orders/${order.id}/checkout`}

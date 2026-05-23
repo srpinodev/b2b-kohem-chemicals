@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('status'); // pending | succeeded | failed | refunded
             $table->decimal('amount', 12, 2);
             $table->string('currency', 3)->default('COP');
-            $table->string('checkout_url')->nullable();
+            $table->text('checkout_url')->nullable();
             $table->json('gateway_response')->nullable();
             $table->timestamps();
 

@@ -5,27 +5,40 @@ import {
   markAllRead,
   markRead,
 } from '../../services/api/notifications'
+import { useRealtimeStore } from '../../store/realtimeStore'
+import { usePolling } from '../../hooks/usePolling'
+
+const POLL_INTERVAL_MS = 15_000
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const knownIdsRef = useRef<Set<string>>(new Set())
+  const bumpTick = useRealtimeStore((s) => s.bumpNotificationTick)
 
   const unread = notifications.filter((n) => !n.read_at).length
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    getNotifications()
-      .then((r) => setNotifications(r.data.data))
-      .finally(() => setLoading(false))
+    try {
+      const r = await getNotifications()
+      const next = r.data.data
+      const seen = knownIdsRef.current
+      const isFirstLoad = seen.size === 0
+      const hasNew = next.some((n) => !seen.has(n.id))
+      knownIdsRef.current = new Set(next.map((n) => n.id))
+      setNotifications(next)
+      // Solo notificamos a otras vistas si llegó algo nuevo después de la carga inicial.
+      if (!isFirstLoad && hasNew) bumpTick()
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => {
-    load()
-    const interval = setInterval(load, 30_000)
-    return () => clearInterval(interval)
-  }, [])
+  useEffect(() => { void load() }, [])
+  usePolling(load, { intervalMs: POLL_INTERVAL_MS })
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
