@@ -1,88 +1,126 @@
 import { useNavigate } from 'react-router-dom'
-import { logout } from '../services/api/auth'
 import { useAuthStore } from '../store/authStore'
 
+type Role = 'cliente' | 'vendedor' | 'administrador'
+
+const ROLE_LABEL: Record<Role, string> = {
+  cliente: 'Cliente',
+  vendedor: 'Vendedor',
+  administrador: 'Administrador',
+}
+
+const ROLE_BLURB: Record<Role, string> = {
+  cliente: 'Aquí encontrarás el catálogo de productos, tus pedidos y facturas.',
+  vendedor: 'Gestiona pedidos de tus clientes y revisa el catálogo.',
+  administrador: 'Panel completo: catálogo, usuarios, pedidos y facturación.',
+}
+
 export default function DashboardPage() {
-  const { user, logout: storeLogout } = useAuthStore()
   const navigate = useNavigate()
-
-  const role = user?.roles[0]?.name ?? 'cliente'
-
-  const roleLabel: Record<string, string> = {
-    cliente: 'Cliente',
-    vendedor: 'Vendedor',
-    administrador: 'Administrador',
-  }
-
-  const roleColor: Record<string, string> = {
-    cliente: 'bg-green-100 text-green-800',
-    vendedor: 'bg-blue-100 text-blue-800',
-    administrador: 'bg-purple-100 text-purple-800',
-  }
-
-  async function handleLogout() {
-    try {
-      await logout()
-    } finally {
-      storeLogout()
-      navigate('/login')
-    }
-  }
+  const user = useAuthStore((s) => s.user)
+  const role = (user?.roles[0]?.name ?? 'cliente') as Role
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <span className="font-bold text-lg text-gray-900">Kohem Chemicals</span>
-        <div className="flex items-center gap-3">
-          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${roleColor[role]}`}>
-            {roleLabel[role]}
-          </span>
-          <span className="text-sm text-gray-600">{user?.name}</span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-600 hover:text-red-800 font-medium"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </nav>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      {/* Welcome banner */}
+      <div className="relative bg-gunmetal-600 text-dust-100 rounded-2xl p-8 mb-8 overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-pine-400/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-gold-400/10 blur-3xl" />
 
-      <main className="max-w-4xl mx-auto px-6 py-10">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Bienvenido, {user?.name}
-        </h2>
-        <p className="text-gray-500 mb-8">
-          {role === 'cliente' && 'Aquí encontrarás el catálogo de productos y tus pedidos.'}
-          {role === 'vendedor' && 'Gestiona pedidos de tus clientes y el catálogo.'}
-          {role === 'administrador' && 'Panel de administración completo.'}
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <DashCard title="Catálogo" desc="Ver productos disponibles" onClick={() => navigate('/catalog')} />
-          <DashCard title="Pedidos" desc="Próximamente — Sprint 3" disabled />
-          <DashCard title="Facturas" desc="Próximamente — Sprint 4" disabled />
-        </div>
-
-        {user?.company && (
-          <div className="mt-8 p-4 bg-white rounded-xl border border-gray-200">
-            <p className="text-sm font-medium text-gray-700">Empresa</p>
-            <p className="text-lg font-semibold text-gray-900">{user.company.name}</p>
-            <p className="text-sm text-gray-500">NIT: {user.company.nit}</p>
+        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-gold-300 mb-2">
+              {ROLE_LABEL[role]}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-dust-50">
+              Bienvenido, {user?.name}
+            </h2>
+            <p className="text-sm text-dust-200 mt-2 max-w-xl">
+              {ROLE_BLURB[role]}
+            </p>
           </div>
-        )}
-      </main>
+
+          {user?.company && (
+            <div className="bg-gunmetal-700/60 border border-gunmetal-500 rounded-xl p-4 min-w-[220px]">
+              <p className="text-[10px] uppercase tracking-wider text-gold-300 mb-1">Empresa</p>
+              <p className="font-semibold text-dust-50">{user.company.name}</p>
+              <p className="text-xs text-dust-300 mt-0.5">NIT: {user.company.nit}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs uppercase tracking-wider text-pine-500 font-semibold mb-3">Accesos rápidos</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <DashCard
+          icon={<CatalogIcon />}
+          title="Catálogo"
+          desc="Productos químicos disponibles"
+          onClick={() => navigate('/catalog')}
+        />
+        <DashCard
+          icon={<OrderIcon />}
+          title="Pedidos"
+          desc="Historial y estado de pedidos"
+          onClick={() => navigate('/orders')}
+        />
+        <DashCard
+          icon={<InvoiceIcon />}
+          title="Facturas"
+          desc="Descarga documentos contables"
+          onClick={() => navigate('/invoices')}
+        />
+      </div>
     </div>
   )
 }
 
-function DashCard({ title, desc, disabled, onClick }: { title: string; desc: string; disabled?: boolean; onClick?: () => void }) {
+function DashCard({
+  icon,
+  title,
+  desc,
+  onClick,
+}: {
+  icon: React.ReactNode
+  title: string
+  desc: string
+  onClick: () => void
+}) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className={`p-5 rounded-xl border ${disabled ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200 hover:border-blue-400 cursor-pointer'}`}
+      className="group text-left p-5 rounded-xl border border-dust-200 bg-white hover:border-pine-400 hover:shadow-md hover:-translate-y-0.5 transition-all"
     >
-      <p className="font-semibold text-gray-800">{title}</p>
-      <p className="text-sm text-gray-500 mt-1">{desc}</p>
-    </div>
+      <div className="w-10 h-10 rounded-lg bg-pine-100 text-pine-600 flex items-center justify-center mb-3 group-hover:bg-gold-400 group-hover:text-gunmetal-800 transition-colors">
+        {icon}
+      </div>
+      <p className="font-semibold text-gunmetal-800">{title}</p>
+      <p className="text-sm text-gunmetal-400 mt-1">{desc}</p>
+    </button>
+  )
+}
+
+function CatalogIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+    </svg>
+  )
+}
+
+function OrderIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  )
+}
+
+function InvoiceIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
   )
 }
