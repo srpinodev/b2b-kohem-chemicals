@@ -14,16 +14,30 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesAndPermissionsSeeder::class);
         $this->call(ProductSeeder::class);
 
+        // ── Empresa interna Kohem (para staff) ─────────────────────────────────
+        $kohem = Company::firstOrCreate(
+            ['nit' => '900000000-0'],
+            [
+                'name'           => 'Kohem Chemicals S.A.S',
+                'address'        => 'Medellín, Colombia',
+                'city'           => 'Medellín',
+                'phone'          => '6044000000',
+                'contact_name'   => 'Administrador',
+                'is_distributor' => false,
+                'is_active'      => true,
+            ]
+        );
+
         // ── Staff (no company) ──────────────────────────────────────────────
         $admin = User::firstOrCreate(
             ['email' => 'admin@kohem.co'],
-            ['name' => 'Administrador Kohem', 'password' => Hash::make('password'), 'is_active' => true]
+            ['name' => 'Administrador Kohem', 'password' => Hash::make('password'), 'company_id' => $kohem->id, 'is_active' => true]
         );
         $admin->syncRoles(['administrador']);
 
         $vendedor = User::firstOrCreate(
             ['email' => 'vendedor@kohem.co'],
-            ['name' => 'Vendedor Demo', 'password' => Hash::make('password'), 'is_active' => true]
+            ['name' => 'Vendedor Demo', 'password' => Hash::make('password'), 'company_id' => $kohem->id, 'is_active' => true]
         );
         $vendedor->syncRoles(['vendedor']);
 

@@ -82,7 +82,7 @@ export default function OrderDetailPage() {
   )
 
   const isOwner = order.user_id === user?.id
-  const canPay = isOwner && ['confirmed', 'processing'].includes(order.status)
+  const canPay = isOwner && order.status === 'confirmed'
   const availableTransitions = isAdmin
     ? TRANSITIONS[order.status]
     : (isOwner && order.status === 'pending' ? ['cancelled'] : [])
