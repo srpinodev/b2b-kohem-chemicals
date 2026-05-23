@@ -43,6 +43,6 @@ class WelcomeUserNotification extends Notification implements ShouldQueue
             ->line('**Tu correo:** '.$notifiable->email)
             ->line('**Contraseña temporal:** `'.$this->temporaryPassword.'`')
             ->action('Iniciar sesión', url('/login'))
-            ->line('Por seguridad, te recomendamos cambiar tu contraseña en el primer ingreso.');
+            ->line('Por seguridad, una vez inicies sesión por primera vez se te pedirá configurar una autenticación adicional.');
     }
 }

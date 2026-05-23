@@ -54,7 +54,12 @@ class AuthController extends Controller
     public function setup2fa(): JsonResponse
     {
         $user = JWTAuth::parseToken()->authenticate();
-        $data = $this->authService->setup2fa($user);
+
+        try {
+            $data = $this->authService->setup2fa($user);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json($data);
     }

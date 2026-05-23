@@ -51,8 +51,19 @@ class AuthService
         return $this->google2fa->verifyKey($user->google2fa_secret, $otp);
     }
 
+    /**
+     * Genera (o regenera, si el setup aún no se completó) el secret TOTP del usuario.
+     *
+     * @throws \DomainException si el usuario ya tiene 2FA activado — el secret no debe
+     *         rotarse silenciosamente porque desincronizaría su app autenticadora.
+     *         Reset legítimo: borrar two_factor_enabled + google2fa_secret (admin).
+     */
     public function setup2fa(User $user): array
     {
+        if ($user->two_factor_enabled) {
+            throw new \DomainException('2FA ya está activado. Pide a un administrador que lo resetee antes de configurarlo de nuevo.');
+        }
+
         $secret = $this->google2fa->generateSecretKey();
         $user->update(['google2fa_secret' => $secret]);
 

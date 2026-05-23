@@ -75,3 +75,6 @@ export const deactivateAdminUser = (id: number) =>
 
 export const resetUserPassword = (id: number) =>
   client.post<ResetPasswordResponse>(`/admin/users/${id}/reset-password`)
+
+export const resetUser2fa = (id: number) =>
+  client.post<{ message: string; user: User }>(`/admin/users/${id}/reset-2fa`)

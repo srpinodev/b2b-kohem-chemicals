@@ -3,6 +3,7 @@ import {
   createAdminUser,
   deactivateAdminUser,
   listAdminUsers,
+  resetUser2fa,
   resetUserPassword,
   type PaginatedUsers,
 } from '../../services/api/admin'
@@ -25,6 +26,7 @@ export default function AdminUsersPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [tempPasswordModal, setTempPasswordModal] = useState<{ name: string; password: string } | null>(null)
   const [pendingDeactivate, setPendingDeactivate] = useState<number | null>(null)
+  const [pendingReset2fa, setPendingReset2fa] = useState<number | null>(null)
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
 
   const refresh = useCallback(async () => {
@@ -69,6 +71,20 @@ export default function AdminUsersPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setError(msg ?? 'No se pudo resetear la contraseña.')
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleReset2fa = async (id: number) => {
+    setActionLoadingId(id)
+    try {
+      await resetUser2fa(id)
+      setPendingReset2fa(null)
+      await refresh()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg ?? 'No se pudo resetear el 2FA.')
     } finally {
       setActionLoadingId(null)
     }
@@ -154,11 +170,18 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-4 py-3 text-gunmetal-700">{u.company?.name ?? '—'}</td>
                       <td className="px-4 py-3">
-                        {u.is_active ? (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold border bg-pine-100 text-pine-700 border-pine-200">Activo</span>
-                        ) : (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold border bg-dust-200 text-gunmetal-700 border-dust-300">Inactivo</span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {u.is_active ? (
+                            <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold border bg-pine-100 text-pine-700 border-pine-200">Activo</span>
+                          ) : (
+                            <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold border bg-dust-200 text-gunmetal-700 border-dust-300">Inactivo</span>
+                          )}
+                          {u.two_factor_enabled && (
+                            <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold border bg-gold-100 text-gold-700 border-gold-200" title="Autenticación 2FA activada">
+                              2FA
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button
@@ -169,6 +192,32 @@ export default function AdminUsersPage() {
                         >
                           Reset password
                         </button>
+                        {pendingReset2fa === u.id ? (
+                          <span className="inline-flex items-center gap-2 mr-3">
+                            <button
+                              onClick={() => handleReset2fa(u.id)}
+                              disabled={actionLoadingId === u.id}
+                              className="text-red-600 hover:text-red-800 text-xs font-semibold disabled:opacity-50"
+                            >
+                              {actionLoadingId === u.id ? 'Reseteando…' : 'Confirmar reset 2FA'}
+                            </button>
+                            <button
+                              onClick={() => setPendingReset2fa(null)}
+                              className="text-gunmetal-400 hover:text-gunmetal-700 text-xs"
+                            >
+                              Cancelar
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setPendingReset2fa(u.id)}
+                            disabled={isSelf || !u.two_factor_enabled}
+                            title={isSelf ? 'No puedes resetear tu propio 2FA' : !u.two_factor_enabled ? 'El usuario no tiene 2FA configurado' : 'Forzar reconfiguración de 2FA en el próximo login'}
+                            className="text-pine-500 hover:text-pine-700 text-xs font-semibold mr-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Reset 2FA
+                          </button>
+                        )}
                         {pendingDeactivate === u.id ? (
                           <span className="inline-flex items-center gap-2">
                             <button

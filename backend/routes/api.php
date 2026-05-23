@@ -85,6 +85,7 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
         Route::post('/users', [UserController::class, 'store']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+        Route::post('/users/{user}/reset-2fa', [UserController::class, 'resetTwoFactor']);
     });
 });
 

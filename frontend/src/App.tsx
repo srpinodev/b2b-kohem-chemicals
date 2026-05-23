@@ -6,6 +6,7 @@ import CatalogPage from './pages/catalog/CatalogPage'
 import ProductDetailPage from './pages/catalog/ProductDetailPage'
 import LoginPage from './pages/auth/LoginPage'
 import TwoFactorPage from './pages/auth/TwoFactorPage'
+import TwoFactorSetupPage from './pages/auth/TwoFactorSetupPage'
 import InvoicesPage from './pages/invoices/InvoicesPage'
 import CartPage from './pages/orders/CartPage'
 import CheckoutPage from './pages/orders/CheckoutPage'
@@ -34,6 +35,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/catalog" replace /> : <LoginPage />} />
       <Route path="/auth/2fa" element={<TwoFactorPage />} />
+      <Route path="/auth/2fa-setup" element={<TwoFactorSetupPage />} />
 
       <Route path="/catalog" element={<Protected><CatalogPage /></Protected>} />
       <Route path="/catalog/:sku" element={<Protected><ProductDetailPage /></Protected>} />

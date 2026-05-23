@@ -134,4 +134,99 @@ class AuthTest extends TestCase
             ->getJson('/api/admin/products')
             ->assertStatus(403);
     }
+
+    public function test_setup2fa_rotates_secret_when_not_yet_enabled(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('cliente');
+        $token = JWTAuth::fromUser($user);
+
+        $first = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/2fa/setup');
+        $first->assertStatus(200)->assertJsonStructure(['secret', 'qr_code_url']);
+
+        // Mientras no esté activado, un segundo setup debe poder rotar el secret.
+        $second = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/2fa/setup');
+        $second->assertStatus(200);
+        $this->assertNotEquals(
+            $first->json('secret'),
+            $second->json('secret'),
+            'Setup debe regenerar el secret antes de activar.',
+        );
+    }
+
+    public function test_setup2fa_rejects_when_already_enabled(): void
+    {
+        $user = User::factory()->create(['two_factor_enabled' => true]);
+        $user->assignRole('cliente');
+        $token = JWTAuth::fromUser($user);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/2fa/setup')
+            ->assertStatus(422)
+            ->assertJsonPath('message', '2FA ya está activado. Pide a un administrador que lo resetee antes de configurarlo de nuevo.');
+    }
+
+    public function test_admin_can_reset_user_2fa(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('administrador');
+        $target = User::factory()->create([
+            'two_factor_enabled' => true,
+            'google2fa_secret'   => 'JBSWY3DPEHPK3PXP',
+        ]);
+        $target->assignRole('cliente');
+
+        $token = JWTAuth::fromUser($admin);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/admin/users/{$target->id}/reset-2fa")
+            ->assertStatus(200)
+            ->assertJsonPath('user.two_factor_enabled', false);
+
+        $this->assertFalse((bool) $target->fresh()->two_factor_enabled);
+        $this->assertNull($target->fresh()->google2fa_secret);
+    }
+
+    public function test_admin_cannot_reset_own_2fa(): void
+    {
+        $admin = User::factory()->create([
+            'two_factor_enabled' => true,
+            'google2fa_secret'   => 'JBSWY3DPEHPK3PXP',
+        ]);
+        $admin->assignRole('administrador');
+        $token = JWTAuth::fromUser($admin);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/admin/users/{$admin->id}/reset-2fa")
+            ->assertStatus(422);
+    }
+
+    public function test_reset_2fa_rejects_when_user_has_no_2fa(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('administrador');
+        $target = User::factory()->create(['two_factor_enabled' => false, 'google2fa_secret' => null]);
+        $target->assignRole('cliente');
+        $token = JWTAuth::fromUser($admin);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/admin/users/{$target->id}/reset-2fa")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'El usuario no tiene 2FA configurado.');
+    }
+
+    public function test_non_admin_cannot_reset_2fa(): void
+    {
+        $vendor = User::factory()->create();
+        $vendor->assignRole('vendedor');
+        $target = User::factory()->create(['two_factor_enabled' => true, 'google2fa_secret' => 'JBSWY3DPEHPK3PXP']);
+        $target->assignRole('cliente');
+        $token = JWTAuth::fromUser($vendor);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/admin/users/{$target->id}/reset-2fa")
+            ->assertStatus(403);
+    }
 }

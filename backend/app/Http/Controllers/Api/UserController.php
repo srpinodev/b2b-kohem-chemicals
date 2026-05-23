@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Models\User;
 use App\Notifications\PasswordResetNotification;
+use App\Notifications\TwoFactorResetNotification;
 use App\Notifications\WelcomeUserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,6 +90,29 @@ class UserController extends Controller
         return response()->json([
             'message'            => 'Contraseña restablecida. También se envió un correo al usuario.',
             'temporary_password' => $temp,
+        ]);
+    }
+
+    public function resetTwoFactor(Request $request, User $user): JsonResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'No puedes resetear tu propio 2FA por este endpoint.'], 422);
+        }
+
+        if (! $user->two_factor_enabled && $user->google2fa_secret === null) {
+            return response()->json(['message' => 'El usuario no tiene 2FA configurado.'], 422);
+        }
+
+        $user->update([
+            'two_factor_enabled' => false,
+            'google2fa_secret'   => null,
+        ]);
+
+        $user->notify(new TwoFactorResetNotification);
+
+        return response()->json([
+            'message' => '2FA restablecido. El usuario deberá configurarlo de nuevo en su próximo inicio de sesión.',
+            'user'    => $user->fresh(['roles', 'company']),
         ]);
     }
 }
