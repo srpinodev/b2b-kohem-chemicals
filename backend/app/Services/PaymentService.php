@@ -55,7 +55,7 @@ class PaymentService
 
     private function applyWebhookResult(WebhookResult $result): ?Transaction
     {
-        $transaction = Transaction::where('gateway_id', $result->gatewayId)->first();
+    $transaction = Transaction::where('gateway_id', $result->gatewayId)->first();
 
         if (! $transaction) {
             return null;
@@ -67,7 +67,17 @@ class PaymentService
         ]);
 
         if ($result->status === 'succeeded') {
-            Invoice::where('id', $transaction->invoice_id)->update(['status' => 'paid']);
+            $invoice = Invoice::find($transaction->invoice_id);
+            $invoice->update(['status' => 'paid']);
+
+            // Actualiza la orden a processing
+            $order = Order::find($transaction->order_id);
+            if ($order && $order->canTransitionTo('processing')) {
+                $order->update(['status' => 'processing']);
+            }
+
+            // Regenera el PDF con estado 'paid' actualizado
+            $this->invoiceService->generatePdf($invoice->fresh());
         }
 
         return $transaction->fresh();

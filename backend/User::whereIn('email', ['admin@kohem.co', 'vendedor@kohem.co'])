@@ -1,0 +1,13 @@
+[90m= [39m[34;4mApp\Models\Company[39;24m {#8163
+    [34mid[39m: [35m4[39m,
+    [34mname[39m: [32m"[39m[32mKohem Chemicals S.A.S[39m[32m"[39m,
+    [34mnit[39m: [32m"[39m[32m900000000-0[39m[32m"[39m,
+    [34maddress[39m: [32m"[39m[32mMedellín, Colombia[39m[32m"[39m,
+    [34mcity[39m: [32m"[39m[32mMedellín[39m[32m"[39m,
+    [34mphone[39m: [32m"[39m[32m6044000000[39m[32m"[39m,
+    [34mcontact_name[39m: [32m"[39m[32mAdministrador[39m[32m"[39m,
+    [34mis_distributor[39m: [35m0[39m,
+    [34mis_active[39m: [35m1[39m,
+    [34mcreated_at[39m: [32m"[39m[32m2026-05-23 13:54:12[39m[32m"[39m,
+    [34mupdated_at[39m: [32m"[39m[32m2026-05-23 13:54:12[39m[32m"[39m,
+  }

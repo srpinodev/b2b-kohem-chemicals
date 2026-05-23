@@ -13,7 +13,15 @@ class InvoiceService
 
     public function createFromOrder(Order $order, string $type = 'invoice'): Invoice
     {
-        $order->loadMissing(['items.product', 'company']);
+        $order->loadMissing(['items.product', 'company', 'user']);
+
+        // Resuelve company_id: orden → usuario → falla explícita
+        $companyId = $order->company_id
+        ?? $order->user?->company_id
+        ?? throw new \RuntimeException(
+            "La orden #{$order->order_number} no tiene empresa asignada. ".
+            "Asegúrate de que el usuario o la orden tengan company_id."
+        );
 
         $subtotal = (float) $order->subtotal;
         $taxAmount = round($subtotal * self::TAX_RATE, 2);
