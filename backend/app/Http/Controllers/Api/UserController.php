@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Models\User;
+use App\Notifications\PasswordResetNotification;
+use App\Notifications\WelcomeUserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -48,6 +50,9 @@ class UserController extends Controller
 
         $user->assignRole($data['role']);
 
+        // Email de bienvenida con la contraseña inicial — encolado, no bloquea la respuesta.
+        $user->notify(new WelcomeUserNotification($data['role'], $data['password']));
+
         return response()->json($user->load(['roles', 'company']), 201);
     }
 
@@ -78,8 +83,11 @@ class UserController extends Controller
         $temp = Str::password(12, symbols: false);
         $user->update(['password' => $temp]);
 
+        // Email al usuario afectado con su nueva contraseña temporal.
+        $user->notify(new PasswordResetNotification($temp));
+
         return response()->json([
-            'message'            => 'Contraseña restablecida. Compártela con el usuario por un canal seguro.',
+            'message'            => 'Contraseña restablecida. También se envió un correo al usuario.',
             'temporary_password' => $temp,
         ]);
     }
