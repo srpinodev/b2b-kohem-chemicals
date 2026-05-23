@@ -1,15 +1,85 @@
 @import "tailwindcss";
 
+/* Kohem brand palette — tokens consumed across the SPA. Touch with care: the
+   four base shades (gunmetal-600, dust-300, gold-400, pine-400) ARE the brand. */
+@theme {
+  --color-gunmetal-50:  #f5f6f6;
+  --color-gunmetal-100: #e6e7e8;
+  --color-gunmetal-200: #c8cacc;
+  --color-gunmetal-300: #9a9ea1;
+  --color-gunmetal-400: #6b6f73;
+  --color-gunmetal-500: #4b4f52;
+  --color-gunmetal-600: #393e41;
+  --color-gunmetal-700: #2c3032;
+  --color-gunmetal-800: #1e2022;
+  --color-gunmetal-900: #131517;
+
+  --color-dust-50:  #fafaf9;
+  --color-dust-100: #f4f3f1;
+  --color-dust-200: #e6e4e0;
+  --color-dust-300: #d3d0cb;
+  --color-dust-400: #b8b4ad;
+  --color-dust-500: #98938b;
+  --color-dust-600: #79746c;
+
+  --color-gold-50:  #fdf9e6;
+  --color-gold-100: #faf1c1;
+  --color-gold-200: #f4e388;
+  --color-gold-300: #ebd25d;
+  --color-gold-400: #e2c044;
+  --color-gold-500: #c5a531;
+  --color-gold-600: #9c8126;
+  --color-gold-700: #735e1c;
+
+  --color-pine-50:  #eef3f3;
+  --color-pine-100: #d6e0e1;
+  --color-pine-200: #abc2c4;
+  --color-pine-300: #7fa2a6;
+  --color-pine-400: #587b7f;
+  --color-pine-500: #486669;
+  --color-pine-600: #3a5354;
+  --color-pine-700: #2b3e3f;
+  --color-pine-800: #1e2c2d;
+
+  --color-brand: #393e41;
+  --color-accent: #e2c044;
+  --color-secondary: #587b7f;
+  --color-surface: #fafaf9;
+  --color-surface-muted: #f4f3f1;
+
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --radius-card: 0.875rem;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--color-surface);
+}
+
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
+  color: var(--color-gunmetal-700);
+  background-color: var(--color-surface);
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
+}
+
+::selection {
+  background-color: var(--color-gold-200);
+  color: var(--color-gunmetal-800);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: none;
 }

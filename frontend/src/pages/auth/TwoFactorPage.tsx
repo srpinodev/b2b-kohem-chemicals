@@ -34,15 +34,22 @@ export default function TwoFactorPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Verificación 2FA</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Ingresa el código de tu aplicación autenticadora.
+    <div className="min-h-screen flex items-center justify-center bg-surface p-4">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg border border-dust-200 p-8">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="w-10 h-10 rounded-md bg-gold-400 text-gunmetal-800 font-bold flex items-center justify-center">K</span>
+          <span className="font-semibold text-gunmetal-800">Kohem Chemicals</span>
+        </div>
+
+        <h1 className="text-xl font-bold text-gunmetal-800 mb-1">Verificación 2FA</h1>
+        <p className="text-sm text-gunmetal-400 mb-6">
+          Ingresa el código de 6 dígitos de tu aplicación autenticadora.
         </p>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm">
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -52,16 +59,17 @@ export default function TwoFactorPage() {
             pattern="[0-9]{6}"
             maxLength={6}
             required
+            autoFocus
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            className="w-full text-center text-2xl tracking-widest border border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-center text-2xl tracking-[0.5em] font-mono bg-dust-50 border border-dust-300 rounded-lg px-3 py-3 text-gunmetal-800 focus:border-pine-400 focus:ring-2 focus:ring-pine-400/30 transition"
             placeholder="000000"
           />
 
           <button
             type="submit"
             disabled={loading || otp.length !== 6}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg transition-colors"
+            className="w-full bg-gunmetal-600 hover:bg-gunmetal-700 disabled:opacity-50 disabled:cursor-not-allowed text-dust-50 font-semibold py-2.5 rounded-lg transition-colors"
           >
             {loading ? 'Verificando...' : 'Verificar'}
           </button>

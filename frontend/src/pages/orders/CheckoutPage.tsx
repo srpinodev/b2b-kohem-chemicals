@@ -39,64 +39,93 @@ export default function CheckoutPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Cargando pedido...</div>
-  if (error && !order) return <div className="p-8 text-center text-red-600">{error}</div>
+  if (loading) return (
+    <div className="max-w-lg mx-auto px-4 sm:px-6 py-10">
+      <div className="bg-white rounded-2xl border border-dust-200 p-8 animate-pulse h-72" />
+    </div>
+  )
+  if (error && !order) return (
+    <div className="max-w-lg mx-auto px-6 py-10 text-center text-red-600">{error}</div>
+  )
   if (!order) return null
 
   const subtotal = Number(order.subtotal)
   const tax = Number(order.tax_amount)
   const total = Number(order.total)
+  const canPay = ['confirmed', 'processing'].includes(order.status)
 
   return (
-    <div className="max-w-lg mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Pagar Pedido</h1>
+    <div className="max-w-lg mx-auto px-4 sm:px-6 py-10">
+      <button
+        onClick={() => navigate(`/orders/${order.id}`)}
+        className="text-sm text-pine-500 hover:text-pine-700 hover:underline mb-6 inline-flex items-center gap-1"
+      >
+        ← Volver al pedido
+      </button>
 
-      <div className="bg-white rounded-lg border p-5 mb-4">
-        <div className="flex justify-between mb-1 text-sm text-gray-600">
-          <span>Pedido</span>
-          <span className="font-medium text-gray-900">{order.order_number}</span>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gunmetal-800 mb-1">Pagar pedido</h1>
+      <p className="text-sm text-gunmetal-400 mb-6">
+        Serás redirigido al procesador seguro para completar el pago.
+      </p>
+
+      <div className="bg-white rounded-2xl border border-dust-200 shadow-sm overflow-hidden mb-4">
+        <div className="bg-gunmetal-600 text-dust-100 px-5 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-gold-300">Pedido</p>
+            <p className="font-mono font-semibold text-dust-50">{order.order_number}</p>
+          </div>
+          <span className="text-[11px] uppercase font-semibold px-2 py-1 rounded-full bg-pine-400 text-dust-50">
+            {order.status}
+          </span>
         </div>
-        <div className="flex justify-between mb-1 text-sm text-gray-600">
-          <span>Estado</span>
-          <span className="capitalize">{order.status}</span>
-        </div>
-        <div className="border-t my-3" />
-        <div className="flex justify-between text-sm text-gray-600 mb-1">
-          <span>Subtotal</span>
-          <span>${subtotal.toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-        </div>
-        <div className="flex justify-between text-sm text-gray-600 mb-3">
-          <span>IVA (19%)</span>
-          <span>${tax.toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-        </div>
-        <div className="flex justify-between font-bold text-gray-900 text-base">
-          <span>Total a pagar</span>
-          <span>${total.toLocaleString('es-CO', { minimumFractionDigits: 0 })} COP</span>
+
+        <div className="p-5 space-y-2 text-sm">
+          <div className="flex justify-between text-gunmetal-600">
+            <span>Subtotal</span>
+            <span>${subtotal.toLocaleString('es-CO')}</span>
+          </div>
+          <div className="flex justify-between text-gunmetal-600">
+            <span>IVA (19%)</span>
+            <span>${tax.toLocaleString('es-CO')}</span>
+          </div>
+          <div className="flex justify-between font-bold text-gunmetal-800 border-t border-dust-200 pt-3 mt-2 text-base">
+            <span>Total a pagar</span>
+            <span>${total.toLocaleString('es-CO')} COP</span>
+          </div>
         </div>
       </div>
 
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-
-      <button
-        onClick={handlePay}
-        disabled={processing || !['confirmed', 'processing'].includes(order.status)}
-        className="w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 disabled:opacity-50 transition"
-      >
-        {processing ? 'Redirigiendo a Stripe...' : 'Pagar con tarjeta'}
-      </button>
-
-      {!['confirmed', 'processing'].includes(order.status) && (
-        <p className="text-sm text-gray-500 mt-2 text-center">
-          El pedido debe estar confirmado para poder pagar.
-        </p>
+      {error && (
+        <div className="mb-3 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm">
+          {error}
+        </div>
       )}
 
       <button
-        onClick={() => navigate(`/orders/${order.id}`)}
-        className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 underline"
+        onClick={handlePay}
+        disabled={processing || !canPay}
+        className="w-full bg-gold-400 hover:bg-gold-500 disabled:opacity-50 disabled:cursor-not-allowed text-gunmetal-800 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2"
       >
-        Volver al pedido
+        {processing ? (
+          <>
+            <span className="w-4 h-4 border-2 border-gunmetal-800 border-t-transparent rounded-full animate-spin" />
+            Redirigiendo a Stripe...
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Pagar con tarjeta
+          </>
+        )}
       </button>
+
+      {!canPay && (
+        <p className="text-sm text-gunmetal-500 mt-3 text-center">
+          El pedido debe estar confirmado para poder pagar.
+        </p>
+      )}
     </div>
   )
 }
