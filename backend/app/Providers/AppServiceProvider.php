@@ -6,6 +6,7 @@ use App\Adapters\Chatbot\ChatbotGateway;
 use App\Adapters\Chatbot\FaqChatbotAdapter;
 use App\Adapters\Email\EmailGateway;
 use App\Adapters\Email\LaravelMailAdapter;
+use App\Adapters\Payment\FakeStripeAdapter;
 use App\Adapters\Payment\PaymentGateway;
 use App\Adapters\Payment\StripeAdapter;
 use App\Events\OrderConfirmed;
@@ -39,8 +40,16 @@ class AppServiceProvider extends ServiceProvider
             new EloquentProductRepository
         ));
 
-        // Adapter pattern: bind PaymentGateway interface to StripeAdapter
-        $this->app->singleton(PaymentGateway::class, fn () => new StripeAdapter);
+        // Adapter pattern: PaymentGateway → Stripe real cuando hay credenciales válidas,
+        // FakeStripeAdapter cuando estamos en demo local con placeholders en .env.
+        $this->app->singleton(PaymentGateway::class, function () {
+            $secret = (string) config('services.stripe.secret');
+            $hasRealStripe = $secret !== ''
+                && str_starts_with($secret, 'sk_')
+                && ! str_ends_with($secret, '_replace_me');
+
+            return $hasRealStripe ? new StripeAdapter : new FakeStripeAdapter;
+        });
 
         $this->app->singleton(PaymentService::class, fn ($app) => new PaymentService(
             $app->make(PaymentGateway::class),

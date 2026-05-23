@@ -49,4 +49,26 @@ class PaymentController extends Controller
 
         return response()->json(['received' => true, 'processed' => $transaction !== null]);
     }
+
+    /**
+     * Endpoint de la "pasarela" simulada — invocado cuando FakeStripeAdapter está activo.
+     * Marca la transacción como pagada y redirige al success_url del frontend.
+     */
+    public function fakeComplete(Request $request)
+    {
+        $gatewayId  = (string) $request->query('gateway_id');
+        $successUrl = (string) $request->query('success_url');
+
+        if ($gatewayId === '' || $successUrl === '') {
+            return response()->json(['message' => 'Missing parameters'], 400);
+        }
+
+        // Reutilizamos el flujo de webhook real: simulamos el payload firmado.
+        $this->paymentService->handleWebhook(
+            json_encode(['gateway_id' => $gatewayId, 'status' => 'succeeded']),
+            'fake-signature',
+        );
+
+        return redirect()->away($successUrl);
+    }
 }
