@@ -12,6 +12,9 @@ import CheckoutPage from './pages/orders/CheckoutPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
 import OrdersPage from './pages/orders/OrdersPage'
 import PaymentReturnPage from './pages/orders/PaymentReturnPage'
+import AdminProductsPage from './pages/admin/AdminProductsPage'
+import AdminProductFormPage from './pages/admin/AdminProductFormPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
 import { useAuthStore } from './store/authStore'
 
 import type { RoleName } from './types'
@@ -41,7 +44,16 @@ export default function App() {
       <Route path="/invoices" element={<Protected><InvoicesPage /></Protected>} />
       <Route path="/payment/return" element={<Protected><PaymentReturnPage /></Protected>} />
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
-      <Route path="/admin" element={<Protected roles={['administrador']}><DashboardPage /></Protected>} />
+
+      {/* Admin & Vendedor: gestión de productos */}
+      <Route path="/admin" element={<Protected roles={['administrador', 'vendedor']}><DashboardPage /></Protected>} />
+      <Route path="/admin/products" element={<Protected roles={['administrador', 'vendedor']}><AdminProductsPage /></Protected>} />
+      <Route path="/admin/products/new" element={<Protected roles={['administrador', 'vendedor']}><AdminProductFormPage /></Protected>} />
+      <Route path="/admin/products/:sku/edit" element={<Protected roles={['administrador', 'vendedor']}><AdminProductFormPage /></Protected>} />
+
+      {/* Admin solo: gestión de usuarios */}
+      <Route path="/admin/users" element={<Protected roles={['administrador']}><AdminUsersPage /></Protected>} />
+
       <Route path="/vendedor" element={<Protected roles={['vendedor', 'administrador']}><DashboardPage /></Protected>} />
 
       <Route path="/" element={<Navigate to={isAuthenticated ? '/catalog' : '/login'} replace />} />
